@@ -2,7 +2,7 @@
 
 class SevenSegmentDisplay {
 private:
-  SevSeg sevseg;
+  SevSeg driver;
 
 public:
   void setup();

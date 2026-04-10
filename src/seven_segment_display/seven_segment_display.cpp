@@ -6,12 +6,12 @@ void SevenSegmentDisplay::setup() {
   byte segmentPins[] = {17, 21, 6, 4, 3, 20, 7, 5};
   bool resistorsOnSegments = true;
   byte hardwareConfig = COMMON_CATHODE;
-  sevseg.begin(hardwareConfig, numDigits, digitPins, segmentPins,
+  driver.begin(hardwareConfig, numDigits, digitPins, segmentPins,
                resistorsOnSegments);
-  sevseg.setBrightness(100);
+  driver.setBrightness(100);
 }
 
 void SevenSegmentDisplay::set_number(int number) {
-  sevseg.setNumber(number, 2);
+  driver.setNumber(number, 2);
 }
-void SevenSegmentDisplay::refresh() { sevseg.refreshDisplay(); }
+void SevenSegmentDisplay::refresh() { driver.refreshDisplay(); }

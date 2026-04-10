@@ -6,11 +6,13 @@
 
 /*
  * We want to update the display every second, while polling for the user
- * input every 10ms. The ITERATIONS_PERIOD is needed to determine when we are
- * supposed to update the digit shown on the display.
+ * input every 1ms. The ITERATIONS_PERIOD is needed to determine when we are
+ * supposed to update the digit shown on the display. We need to poll this often
+ * because the seven segment display needs to be refreshed frequently to avoid
+ * weird flickering.
  */
 const int DISPLAY_UPDATE_INTERVAL = 1000;
-const int POLLING_INTERVAL = 10;
+const int POLLING_INTERVAL = 1;
 const int ITERATIONS_PERIOD = DISPLAY_UPDATE_INTERVAL / POLLING_INTERVAL;
 
 /*
