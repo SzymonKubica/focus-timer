@@ -1,5 +1,6 @@
 #include "SevSeg.h"
-SevSeg sevseg;
+#include <Arduino.h>
+#include <SPI.h>
 #include <DS3231.h>
 #include <Wire.h>
 
@@ -45,7 +46,7 @@ inline bool button_press_registered() {
   int pinValue = digitalRead(ACTION_BUTTON);
   delay(1); // debounce filter
   if (buttonState != pinValue) {
-    bool test =  pinValue == PRESSED && buttonState == NOT_PRESSED;
+    bool test = pinValue == PRESSED && buttonState == NOT_PRESSED;
     buttonState = pinValue;
     return test;
   }
@@ -63,29 +64,15 @@ enum Mode get_next_mode(enum Mode mode) {
   }
 }
 
-
 void setup() {
-  // Configure the 4-digit segment display.
-  byte numDigits = 4;
-  byte digitPins[] = {14, 16, 13, 12};
-  byte segmentPins[] = {17, 21, 6, 4, 3, 20, 7, 5};
-  bool resistorsOnSegments = true;
-  bool updateWithDelaysIn = true;
-  byte hardwareConfig = COMMON_CATHODE;
-  sevseg.begin(hardwareConfig, numDigits, digitPins, segmentPins,
-               resistorsOnSegments);
-  sevseg.setBrightness(100);
 
   pinMode(ACTION_BUTTON, INPUT_PULLUP);
   // Serial port for logging
   Serial.begin(57600);
-  // Communication with the DS3231 via SCL and SDA
   Wire.begin();
   delay(500);
   Serial.println("Nano Ready!");
 }
-
-
 
 void loop() {
   int counter = 0;
@@ -98,9 +85,9 @@ void loop() {
       Serial.println("Button press registered");
       mode = get_next_mode(mode);
       if (mode == COUNTING) {
-          now = myRTC.now();
-          start_seconds = now.unixtime();
-        }
+        now = myRTC.now();
+        start_seconds = now.unixtime();
+      }
     }
 
     if (counter % DISPLAY_UPDATE_INTERVAL == 0) {
@@ -109,7 +96,7 @@ void loop() {
       int now_seconds = now.unixtime();
       int elapsed = now_seconds - start_seconds;
 
-     switch (mode) {
+      switch (mode) {
       case CLOCK:
         sevseg.setNumber(get_hours_minutes_display(now), 2);
         break;
@@ -125,4 +112,3 @@ void loop() {
     sevseg.refreshDisplay();
   }
 }
-

@@ -1,0 +1,4 @@
+- [ ] cleanup the main entrypoint
+- [ ] extract the seven segment display into a library
+- [ ] add wifi setup
+- [ ] resolve clangd warnings to allow for indexing of the entire arduino library.

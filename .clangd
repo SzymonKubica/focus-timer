@@ -1,0 +1,6 @@
+CompileFlags:
+  Add: [-Wno-unknown-attributes]
+Diagnostics:
+  Suppress: [
+    "anonymous bit-field has qualifiers"
+  ]
