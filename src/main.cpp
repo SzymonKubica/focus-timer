@@ -1,46 +1,14 @@
-#include "SevSeg.h"
+#include "seven_segment_display/seven_segment_display.hpp"
 #include <Arduino.h>
 #include <SPI.h>
-#include <DS3231.h>
 #include <Wire.h>
-
-RTClib myRTC;
 
 #define ACTION_BUTTON 15
 #define PRESSED 1
 #define NOT_PRESSED 0
 
 int buttonState = 0;
-typedef enum Mode { COUNTING, STOPPED, CLOCK } Mode;
 #define DISPLAY_UPDATE_INTERVAL 1000 // ms
-
-void log_time(DateTime now) {
-  Serial.print(now.year(), DEC);
-  Serial.print('/');
-  Serial.print(now.month(), DEC);
-  Serial.print('/');
-  Serial.print(now.day(), DEC);
-  Serial.print(' ');
-  Serial.print(now.hour(), DEC);
-  Serial.print(':');
-  Serial.print(now.minute(), DEC);
-  Serial.print(':');
-  Serial.print(now.second(), DEC);
-  Serial.println();
-  Serial.print(" since midnight 1/1/1970 = ");
-  Serial.print(now.unixtime());
-  Serial.print("s = ");
-  Serial.print(now.unixtime() / 86400L);
-  Serial.println("d");
-}
-
-int get_elapsed_seconds_display(int elapsed) {
-  return (elapsed / 60) * 100 + elapsed % 60;
-}
-
-int get_hours_minutes_display(DateTime time) {
-  return time.hour() * 100 + time.minute();
-}
 
 inline bool button_press_registered() {
   int pinValue = digitalRead(ACTION_BUTTON);
@@ -53,22 +21,9 @@ inline bool button_press_registered() {
   return false;
 }
 
-enum Mode get_next_mode(enum Mode mode) {
-  switch (mode) {
-  case CLOCK:
-    return COUNTING;
-  case COUNTING:
-    return STOPPED;
-  case STOPPED:
-    return CLOCK;
-  }
-}
-
 void setup() {
-
   pinMode(ACTION_BUTTON, INPUT_PULLUP);
-  // Serial port for logging
-  Serial.begin(57600);
+  Serial.begin(115200);
   Wire.begin();
   delay(500);
   Serial.println("Nano Ready!");
@@ -76,39 +31,29 @@ void setup() {
 
 void loop() {
   int counter = 0;
-  Mode mode = CLOCK;
-  DateTime now = myRTC.now();
-  int start_seconds = now.unixtime();
 
+  SevenSegmentDisplay display{};
+  display.setup();
+
+  bool counting = false;
+  int start = millis();
   while (true) {
     if (button_press_registered()) {
       Serial.println("Button press registered");
-      mode = get_next_mode(mode);
-      if (mode == COUNTING) {
-        now = myRTC.now();
-        start_seconds = now.unixtime();
+      if (counting) {
+        counting = false;
+      } else {
+        start = millis();
+        counting = true;
       }
     }
 
-    if (counter % DISPLAY_UPDATE_INTERVAL == 0) {
-      DateTime now = myRTC.now();
-      log_time(now);
-      int now_seconds = now.unixtime();
-      int elapsed = now_seconds - start_seconds;
-
-      switch (mode) {
-      case CLOCK:
-        sevseg.setNumber(get_hours_minutes_display(now), 2);
-        break;
-      case COUNTING:
-        sevseg.setNumber(get_elapsed_seconds_display(elapsed), 2);
-        break;
-      case STOPPED:
-        break;
-      }
+    if (counting && counter % DISPLAY_UPDATE_INTERVAL == 0) {
+      int elapsed = (millis() - start) / 1000;
+      display.set_number(elapsed);
     }
     counter = (counter + 1) % 1000;
 
-    sevseg.refreshDisplay();
+    display.refresh();
   }
 }

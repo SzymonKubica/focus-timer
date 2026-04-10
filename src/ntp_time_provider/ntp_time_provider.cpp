@@ -1,3 +1,4 @@
+/*
 #include <Arduino.h>
 #include <WiFiNINA.h>
 #include <WiFiUdp.h>
@@ -58,3 +59,4 @@ void setup() {
 }
 
 void loop() {}
+*/
