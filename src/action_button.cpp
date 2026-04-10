@@ -13,7 +13,6 @@ void ActionButton::setup() { pinMode(ACTION_BUTTON, INPUT_PULLUP); }
  */
 bool ActionButton::poll_for_input() {
   int pin_state = digitalRead(ACTION_BUTTON);
-  delay(10); // debounce filter
   if (button_state != pin_state) {
     bool test = pin_state == PRESSED && button_state == NOT_PRESSED;
     button_state = pin_state;

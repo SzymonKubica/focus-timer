@@ -42,7 +42,7 @@ public:
   }
   void increment_iteration() {
     iterations_since_last_display_update =
-        (iterations_since_last_display_update + 1) % 1000;
+        (iterations_since_last_display_update + 1) % ITERATIONS_PERIOD;
   }
 };
 
@@ -84,8 +84,9 @@ void loop() {
   }
 
   if (state.is_counting && state.iterations_period_reached()) {
-    int elapsed = (millis() - state.counting_start_timestamp) / 1000;
-    display.set_number(get_minutes_and_seconds(elapsed));
+    int elapsed_millis = (millis() - state.counting_start_timestamp);
+    int elapsed_seconds = elapsed_millis / 1000;
+    display.set_number(get_minutes_and_seconds(elapsed_seconds));
   }
   state.increment_iteration();
 
