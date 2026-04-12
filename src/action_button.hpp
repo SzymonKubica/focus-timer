@@ -10,7 +10,7 @@
  */
 class ActionButton {
 private:
-  int button_state = 0;
+  int button_state = NOT_PRESSED;
 
 public:
   void setup();

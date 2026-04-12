@@ -3,4 +3,4 @@
 - [x] add wifi setup
 - [ ] resolve clangd warnings to allow for indexing of the entire arduino library.
 - [ ] ensure that wifi password secrets aren't checked into the repo.
-- [ ] add functionality so that the timer acts as a clock after boot.
+- [x] add functionality so that the timer acts as a clock after boot

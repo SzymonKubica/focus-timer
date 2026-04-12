@@ -17,11 +17,14 @@ const int DISPLAY_UPDATE_INTERVAL = 1000;
 const int POLLING_INTERVAL = 1;
 const int ITERATIONS_PERIOD = DISPLAY_UPDATE_INTERVAL / POLLING_INTERVAL;
 
+const int POLAND_TIMEZONE_OFFSET_HOURS = 2;
+
 /*
  * Statically initialize all 'peripherals' of the focus timer.
  */
 ActionButton button;
 SevenSegmentDisplay display;
+TimeProvider time_provider;
 
 enum class TimerMode { COUNTING, IDLE, CLOCK };
 
@@ -38,6 +41,7 @@ public:
    * Timestamp measured in terms of millis() when we started counting.
    */
   int counting_start_timestamp;
+  long last_time_fetch_timestamp = 0;
   /**
    * Tracks whether we are currently counting or if the focus timer is paused.
    */
@@ -86,21 +90,7 @@ void setup() {
   WifiProvider provider;
   provider.connect();
 
-  TimeProvider time_provider;
   time_provider.setup();
-  auto time = time_provider.get_current_time();
-
-  Serial.print("Unix time: ");
-  Serial.println(time);
-
-  Serial.print("UTC time: ");
-  Serial.println(String(get_utc_hour_minute(time).hour) + ":" +
-                 String(get_utc_hour_minute(time).minute));
-
-  display.set_number(get_hours_and_minutes(get_utc_hour_minute(time)));
-
-  Serial.println("Focus Timer is ready!");
-  state.counting_start_timestamp = millis();
 }
 
 /**
@@ -116,12 +106,16 @@ int get_minutes_and_seconds(int elapsed_seconds) {
 void loop() {
   if (button.poll_for_input()) {
     Serial.println("Button press registered.");
-    if (state.mode == TimerMode::IDLE || state.mode == TimerMode::CLOCK) {
+    if (state.mode == TimerMode::CLOCK) {
       Serial.println("Starting the counter.");
       state.counting_start_timestamp = millis();
       state.mode = TimerMode::COUNTING;
-    } else {
+    } else if (state.mode == TimerMode::COUNTING) {
       state.mode = TimerMode::IDLE;
+    } else if (state.mode == TimerMode::IDLE) {
+      // Force re-fetch of the time when toggled into the clock mode.
+      state.last_time_fetch_timestamp = 0;
+      state.mode = TimerMode::CLOCK;
     }
   }
 
@@ -129,6 +123,24 @@ void loop() {
     int elapsed_millis = (millis() - state.counting_start_timestamp);
     int elapsed_seconds = elapsed_millis / 1000;
     display.set_number(get_minutes_and_seconds(elapsed_seconds));
+  }
+
+  if (state.mode == TimerMode::CLOCK && state.iterations_period_reached()) {
+    if (state.last_time_fetch_timestamp == 0 ||
+        millis() - state.last_time_fetch_timestamp > 60000) {
+      auto time = time_provider.get_current_time();
+      state.last_time_fetch_timestamp = millis();
+
+      Serial.print("Unix time: ");
+      Serial.println(time);
+      auto utc_time = get_utc_hour_minute(time);
+      utc_time.hour += POLAND_TIMEZONE_OFFSET_HOURS;
+
+      Serial.print("UTC time: ");
+      Serial.println(String(utc_time.hour) + ":" + String(utc_time.minute));
+
+      display.set_number(get_hours_and_minutes(utc_time));
+    }
   }
   state.increment_iteration();
 
