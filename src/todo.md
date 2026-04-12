@@ -1,4 +1,6 @@
-- [ ] cleanup the main entrypoint
-- [ ] extract the seven segment display into a library
-- [ ] add wifi setup
+- [x] cleanup the main entrypoint
+- [x] extract the seven segment display into a library
+- [x] add wifi setup
 - [ ] resolve clangd warnings to allow for indexing of the entire arduino library.
+- [ ] ensure that wifi password secrets aren't checked into the repo.
+- [ ] add functionality so that the timer acts as a clock after boot.

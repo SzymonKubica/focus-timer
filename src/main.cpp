@@ -1,5 +1,7 @@
 #include "action_button.hpp"
+#include "ntp_time_provider/ntp_time_provider.hpp"
 #include "seven_segment_display/seven_segment_display.hpp"
+#include "wifi_provider/wifi_provider.hpp"
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -21,6 +23,8 @@ const int ITERATIONS_PERIOD = DISPLAY_UPDATE_INTERVAL / POLLING_INTERVAL;
 ActionButton button;
 SevenSegmentDisplay display;
 
+enum class TimerMode { COUNTING, IDLE, CLOCK };
+
 class FocusTimerState {
   /**
    * State variable incremented on each loop iteration. This is required to
@@ -37,7 +41,7 @@ public:
   /**
    * Tracks whether we are currently counting or if the focus timer is paused.
    */
-  bool is_counting = false;
+  TimerMode mode = TimerMode::CLOCK;
 
   bool iterations_period_reached() {
     return iterations_since_last_display_update % ITERATIONS_PERIOD == 0;
@@ -53,6 +57,24 @@ public:
  */
 FocusTimerState state;
 
+struct TimeHM {
+  uint8_t hour;
+  uint8_t minute;
+};
+
+TimeHM get_utc_hour_minute(uint32_t epoch) {
+  TimeHM t;
+
+  uint32_t secondsInDay = epoch % 86400UL;
+
+  t.hour = secondsInDay / 3600;
+  t.minute = (secondsInDay % 3600) / 60;
+
+  return t;
+}
+
+int get_hours_and_minutes(TimeHM time) { return time.hour * 100 + time.minute; }
+
 void setup() {
   Serial.begin(115200);
   delay(500);
@@ -60,6 +82,18 @@ void setup() {
   // Initialize all 'peripherals'
   display.setup();
   button.setup();
+
+  WifiProvider provider;
+  provider.connect();
+
+  TimeProvider time_provider;
+  time_provider.setup();
+  auto time = time_provider.get_current_time();
+
+  Serial.print("Unix time: ");
+  Serial.println(time);
+
+  display.set_number(get_hours_and_minutes(get_utc_hour_minute(time)));
 
   Serial.println("Focus Timer is ready!");
   state.counting_start_timestamp = millis();
@@ -78,14 +112,16 @@ int get_minutes_and_seconds(int elapsed_seconds) {
 void loop() {
   if (button.poll_for_input()) {
     Serial.println("Button press registered.");
-    if (!state.is_counting) {
+    if (state.mode == TimerMode::IDLE || state.mode == TimerMode::CLOCK) {
       Serial.println("Starting the counter.");
       state.counting_start_timestamp = millis();
+      state.mode = TimerMode::COUNTING;
+    } else {
+      state.mode = TimerMode::IDLE;
     }
-    state.is_counting = !state.is_counting;
   }
 
-  if (state.is_counting && state.iterations_period_reached()) {
+  if (state.mode == TimerMode::COUNTING && state.iterations_period_reached()) {
     int elapsed_millis = (millis() - state.counting_start_timestamp);
     int elapsed_seconds = elapsed_millis / 1000;
     display.set_number(get_minutes_and_seconds(elapsed_seconds));
