@@ -65,10 +65,10 @@ struct TimeHM {
 TimeHM get_utc_hour_minute(uint32_t epoch) {
   TimeHM t;
 
-  uint32_t secondsInDay = epoch % 86400UL;
+  uint32_t second_modulo_day = epoch % 86400UL;
 
-  t.hour = secondsInDay / 3600;
-  t.minute = (secondsInDay % 3600) / 60;
+  t.hour = second_modulo_day / 3600;
+  t.minute = (second_modulo_day % 3600) / 60;
 
   return t;
 }
@@ -92,6 +92,10 @@ void setup() {
 
   Serial.print("Unix time: ");
   Serial.println(time);
+
+  Serial.print("UTC time: ");
+  Serial.println(String(get_utc_hour_minute(time).hour) + ":" +
+                 String(get_utc_hour_minute(time).minute));
 
   display.set_number(get_hours_and_minutes(get_utc_hour_minute(time)));
 
